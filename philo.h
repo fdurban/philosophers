@@ -8,11 +8,11 @@
 
 typedef struct philo {
 
-	int id;
-	pthread_mutex_t *left_fork;
-	pthread_mutex_t *right_fork;
-	pthread_mutex_t	*write_lock;
-
+	pthread_mutex_t	fork;
+	int				id;
+	long			time_to_eat;
+	long			time_to_sleep;
+	long			time_to_die;
 } philo_t;
 
 long	ft_atol(const char *str);
