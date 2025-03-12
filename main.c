@@ -6,44 +6,54 @@
 /*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/03/11 17:16:18 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/03/12 16:18:39 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <stdio.h>
-#include <pthread.h>
 #include "philo.h"
 
 void	*thread_function(void *arg)
 {
 	philo_t *philosophers = (philo_t *)arg;
 
-	pthread_mutex_lock(philosophers->left_fork);
-	pthread_mutex_lock(philosophers->right_fork);
-	printf("I am the %d philo\n", philosophers->id);
-	// I AM EATING
-	//USLEEP(time to eat);
-	pthread_mutex_unlock(philosophers->left_fork);
-	pthread_mutex_unlock(philosophers->right_fork);
-	//USLEEP(time to sleep)
+	if(philosophers->id % 2 != 0)
+	{
+		pthread_mutex_lock(philosophers->write_lock);
+		usleep(1000000);
+		printf("Philosopher %d is sleeping\n", philosophers->id);
+	}
+	else
+	{
+		printf("Philosopher %d is eating\n", philosophers->id);
+		
+	}
+	if(philosophers->id % 2 != 0)
+	{
+		pthread_mutex_unlock(philosophers->write_lock);
+		usleep(1000000);
+	}
 	return (NULL);
 }
 
-int main()
+int main(int argc, char **argv)
 {
-	philo_t			philosophers[4];
-	pthread_t		thread[4];
+	philo_t			*philosophers;
+	pthread_t		thread[100];
 	pthread_mutex_t	write_lock1;
 	int i;
-
+	long philo_arg;
+	
+	printf("Number of arguments is %d\n", argc);
+	philo_arg = ft_atol(argv[1]);
+	philosophers = malloc(sizeof(philo_t) * philo_arg);
 	pthread_mutex_init(&write_lock1, NULL);
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 100; i++)
 	{
 		philosophers[i].id = i;
 		philosophers[i].write_lock = &write_lock1;
 	}
 	i = 0;
-	while (i < 4)
+	while (i < 100)
 	{
 		if (pthread_create(&thread[i], NULL, &thread_function, &philosophers[i]) != 0)
 		{
@@ -53,7 +63,7 @@ int main()
 		i++;
 	}
 	i = 0;
-	while (i < 4)
+	while (i < 100)
 	{
 		if (pthread_join(thread[i], NULL) != 0)
 		{
@@ -64,10 +74,3 @@ int main()
 	}
 	printf("Terminan aquí\n");
 }
-	//philo_t		philosophers[5];
-	// philo_t philosophers;
-	// philosohers = (philo_t)name;
-	// pthread_mutex_lock(left_fork);
-	// pthread_mutex_lock(right_fork);
-	// pthread_mutex_unlock(left_fork);
-	// pthread_mutex_unlock(right_fork);
