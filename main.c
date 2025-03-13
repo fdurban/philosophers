@@ -6,7 +6,7 @@
 /*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/03/13 18:56:18 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/03/13 19:01:16 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@ void	*thread_function(void *arg)
 	philo_t *philo = (philo_t *)arg;
 	
 	while (1)
-	{		
+	{
 		if (philo->id % 2 == 0)
 		{
 			usleep(philo->time_to_sleep);
