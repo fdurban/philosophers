@@ -6,7 +6,7 @@
 /*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/03/12 19:01:45 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/03/13 18:56:18 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,25 +14,25 @@
 
 void	*thread_function(void *arg)
 {
-	philo_t *philosophers = (philo_t *)arg;
-
-	if (philosophers->id % 2 == 0)
-	{
-		pthread_mutex_lock(&philosophers[philosophers->id].fork);
-		printf("Philosopher %d is eating\n", philosophers->id);
-		usleep(philosophers->time_to_eat);
+	philo_t *philo = (philo_t *)arg;
+	
+	while (1)
+	{		
+		if (philo->id % 2 == 0)
+		{
+			usleep(philo->time_to_sleep);
+			printf("Philosopher %d is sleeping\n", philo->id);
+		}
+		pthread_mutex_lock(philo->left_fork);
+		pthread_mutex_lock(philo->right_fork);
+		printf(YELLOW "Philosopher %d takes left fork\n" RESET, philo->id);
+		printf(YELLOW "Philosopher %d takes right fork\n" RESET, philo->id);
+		printf(YELLOW "Philosopher %d is eating\n" RESET, philo->id);
+		pthread_mutex_unlock(philo->left_fork);
+		pthread_mutex_unlock(philo->right_fork);
+		usleep(philo->time_to_eat);
 	}
-	else
-	{
-		printf("Philosopher %d is sleeping\n", philosophers->id);
-		usleep(philosophers->time_to_sleep);
-	}
-	if (philosophers->id % 2 == 0)
-	{
-		pthread_mutex_unlock(&philosophers[philosophers->id].fork);
-		usleep(philosophers->time_to_eat);
-	}
-	return (NULL);
+		return (NULL);
 }
 
 int main(int argc, char **argv)
@@ -40,20 +40,20 @@ int main(int argc, char **argv)
 	printf("Number of arguments is %d\n", argc);
 	philo_t			*philosophers;
 	pthread_t		*thread;
+	pthread_mutex_t	*forks;
 	int				i;
 	long			number_of_philosophers;
 	
 	philosophers = malloc(sizeof(philo_t) * ft_atol(argv[1]));
+	forks = malloc(sizeof(pthread_mutex_t) * ft_atol(argv[1]));
 	number_of_philosophers = ft_atol(argv[1]);
-	philosophers->time_to_die = ft_atol(argv[2]);
-	philosophers->time_to_eat = ft_atol(argv[3]);
-	philosophers->time_to_sleep = ft_atol(argv[4]);
 	thread = malloc(sizeof(pthread_t) * number_of_philosophers);
-	
+	pthread_mutex_init(&philosophers->write, NULL);
 	i = 0;
 	while (i < number_of_philosophers)
 	{
-		if (pthread_mutex_init(&philosophers[i].fork, NULL) != 0)
+		philosophers[i].id = i;
+		if (pthread_mutex_init(&forks[i], NULL) != 0)
 		{
 			perror("Error inicializando el mutex");
 			return (1);
@@ -63,7 +63,16 @@ int main(int argc, char **argv)
 	i = 0;
 	while (i < number_of_philosophers)
 	{
-		philosophers->id = i;
+		philosophers[i].time_to_die = ft_atol(argv[2]);
+		philosophers[i].time_to_eat = ft_atol(argv[3]);
+		philosophers[i].time_to_sleep = ft_atol(argv[4]);
+		philosophers[i].left_fork = &forks[i];
+		philosophers[i].right_fork = &forks[(i + 1) %  number_of_philosophers];
+		i++;
+	}
+	i = 0;
+	while (i < number_of_philosophers)
+	{
 		if (pthread_create(&thread[i], NULL, &thread_function, &philosophers[i]) != 0)
 		{
 			perror("Error al crear el hilo");
@@ -84,4 +93,5 @@ int main(int argc, char **argv)
 	printf("Terminan aquí\n");
 	free(philosophers);
 	free(thread);
+	free(forks);
 }
