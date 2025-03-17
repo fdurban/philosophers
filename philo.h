@@ -21,8 +21,10 @@ typedef struct philo {
 	pthread_mutex_t	write;
 	int				id;
 	long			time_to_eat;
+	long			time_of_last_meal;
 	long			time_to_sleep;
 	long			time_to_die;
+	long			time_to_think;
 } philo_t;
 
 typedef struct personal_timeval
