@@ -3,36 +3,49 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fernando <fernando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/03/13 19:01:16 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/03/14 18:26:23 by fernando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
+long	get_time_stamp()
+{
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	return ((tv.tv_sec * 10000) + (tv.tv_usec / 1000));
+}
+
 void	*thread_function(void *arg)
 {
 	philo_t *philo = (philo_t *)arg;
-	
+	long timestamp = get_time_stamp();
+
 	while (1)
 	{
 		if (philo->id % 2 == 0)
-		{
-			usleep(philo->time_to_sleep);
-			printf("Philosopher %d is sleeping\n", philo->id);
-		}
-		pthread_mutex_lock(philo->left_fork);
+			usleep(100000);  // Los pares empiezan más tarde para desincronizar un poco
+
 		pthread_mutex_lock(philo->right_fork);
-		printf(YELLOW "Philosopher %d takes left fork\n" RESET, philo->id);
-		printf(YELLOW "Philosopher %d takes right fork\n" RESET, philo->id);
-		printf(YELLOW "Philosopher %d is eating\n" RESET, philo->id);
-		pthread_mutex_unlock(philo->left_fork);
+		printf(YELLOW "[%ld ms] Philosopher %d takes right fork\n" RESET, get_time_stamp() - timestamp, philo->id);
+
+		pthread_mutex_lock(philo->left_fork);
+		printf(YELLOW "[%ld ms] Philosopher %d takes right fork\n" RESET, get_time_stamp() - timestamp, philo->id);
+
+		printf(YELLOW "[%ld ms] Philosopher %d takes right fork\n" RESET, get_time_stamp() - timestamp, philo->id);
+		printf(YELLOW "[%ld ms] Philosopher %d is eating\n" RESET, get_time_stamp() - timestamp, philo->id);
+		usleep(1000000);
+
 		pthread_mutex_unlock(philo->right_fork);
-		usleep(philo->time_to_eat);
+		pthread_mutex_unlock(philo->left_fork);
+
+		printf("[%ld ms] Philosopher %d is sleeping\n", get_time_stamp() - timestamp, philo->id);
+		usleep(900000);
 	}
-		return (NULL);
+	return (NULL);
 }
 
 int main(int argc, char **argv)

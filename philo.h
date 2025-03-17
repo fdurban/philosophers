@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <sys/time.h>
 #include "philo.h"
 
 
@@ -23,6 +24,12 @@ typedef struct philo {
 	long			time_to_sleep;
 	long			time_to_die;
 } philo_t;
+
+typedef struct personal_timeval
+{
+	time_t tv_sec;
+	__suseconds_t tv_usec;
+} personal_timeval_t ;
 
 long	ft_atol(const char *str);
 
