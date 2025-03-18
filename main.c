@@ -6,7 +6,7 @@
 /*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/03/17 18:02:34 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/03/18 17:47:24 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,23 +29,43 @@ void	*thread_function(void *arg)
 	while (1)
 	{
 		
-		//Aa partir de aquí, empiezan a comer
+		//A partir de aquí, empiezan a comer
 		pthread_mutex_lock(philo->right_fork);
-		printf(YELLOW "[%ld ms] Philosopher %d takes right fork\n" RESET, get_time_stamp() - timestamp, philo->id);		
+		printf(YELLOW "%ld %d has taken a fork\n" RESET, get_time_stamp() - timestamp, philo->id);		
 		pthread_mutex_lock(philo->left_fork);
-		printf(YELLOW "[%ld ms] Philosopher %d takes left fork\n" RESET, get_time_stamp() - timestamp, philo->id);
-		long	time_start_eating = get_time_stamp();
-		printf(GREEN "[%ld ms] Philosopher %d is eating\n" RESET, get_time_stamp() - timestamp, philo->id);
+		printf(YELLOW "%ld %d has taken a fork\n" RESET, get_time_stamp() - timestamp, philo->id);
+		printf(GREEN "%ld %d is eating\n" RESET, get_time_stamp() - timestamp, philo->id);
+		
+		pthread_mutex_lock(philo->meal_mutex);
+		philo->time_of_last_meal = get_time_stamp();
+		pthread_mutex_unlock(philo->meal_mutex);
 		usleep(philo->time_to_eat * 1000);
+
 		pthread_mutex_unlock(philo->right_fork);
 		pthread_mutex_unlock(philo->left_fork);
 		//Aquí termina de comer del todo;
-		philo->time_of_last_meal = get_time_stamp() - time_start_eating;
-		
-		printf("[%ld ms] Philosopher %d is sleeping\n", get_time_stamp() - timestamp, philo->id);
-		usleep(philo->time_to_sleep);
-		printf("time they took to eat %ld\n", philo->time_of_last_meal);
-
+		//Aquí comprueba si la palma vvvvvvvv
+		printf("time they took to eat %ld\n",get_time_stamp() - philo->time_of_last_meal);
+		pthread_mutex_lock(philo->dead);
+		if (get_time_stamp() - philo->time_of_last_meal > philo->time_to_die)
+		{
+			printf(RED "%ld %d died\n" RESET, get_time_stamp() - timestamp, philo->id);
+			pthread_mutex_unlock(philo->dead);
+			pthread_mutex_unlock(philo->left_fork);
+			pthread_mutex_unlock(philo->right_fork);
+			return (NULL);
+		}
+		pthread_mutex_unlock(philo->dead);
+		printf(BLUE "%ld %d is sleeping\n" RESET, get_time_stamp() - timestamp, philo->id);
+		usleep(philo->time_to_sleep * 1000);
+		if (get_time_stamp() - philo->time_of_last_meal > philo->time_to_die)
+		{
+			printf(RED "%ld %d died\n" RESET, get_time_stamp() - timestamp, philo->id);
+			pthread_mutex_unlock(philo->dead);
+			pthread_mutex_unlock(philo->left_fork);
+			pthread_mutex_unlock(philo->right_fork);
+			return (NULL);
+		}
 	}
 	return (NULL);
 }
@@ -56,14 +76,21 @@ int main(int argc, char **argv)
 	philo_t			*philosophers;
 	pthread_t		*thread;
 	pthread_mutex_t	*forks;
+	pthread_mutex_t *dead;
+	pthread_mutex_t *meal_mutex;
 	int				i;
 	long			number_of_philosophers;
 	
 	philosophers = malloc(sizeof(philo_t) * ft_atol(argv[1]));
-	forks = malloc(sizeof(pthread_mutex_t) * ft_atol(argv[1]));
+	forks = malloc(sizeof(pthread_mutex_t) * ft_atol(argv[1])); // 5
+	dead = malloc(sizeof(pthread_mutex_t)); // 1
+	meal_mutex = malloc(sizeof(pthread_mutex_t)); // 1
 	number_of_philosophers = ft_atol(argv[1]);
 	thread = malloc(sizeof(pthread_t) * number_of_philosophers);
-	pthread_mutex_init(&philosophers->write, NULL);
+	//pthread_mutex_init(&philosophers->write, NULL);
+	pthread_mutex_init(dead, NULL);
+	pthread_mutex_init(meal_mutex, NULL);
+	write(1,"Entra\n", 6);
 	i = 0;
 	while (i < number_of_philosophers)
 	{
@@ -83,6 +110,8 @@ int main(int argc, char **argv)
 		philosophers[i].time_to_sleep = ft_atol(argv[4]);
 		philosophers[i].left_fork = &forks[i];
 		philosophers[i].right_fork = &forks[(i + 1) %  number_of_philosophers];
+		philosophers[i].dead = dead;
+		philosophers[i].meal_mutex = meal_mutex;
 		i++;
 	}
 	i = 0;
