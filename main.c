@@ -6,7 +6,7 @@
 /*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/03/19 18:06:09 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/03/19 18:37:38 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,41 @@ long	get_time_stamp()
 	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
 }
 
+static int check_if_dead(philo_t *philo)
+{
+	pthread_mutex_lock(philo->dead);
+	if(*philo->someone_died)
+	{
+		pthread_mutex_unlock(philo->dead);
+		return (0);
+	}
+	pthread_mutex_unlock(philo->dead);
+	return (1);
+}
+static void	print_message(philo_t *philo, long time, char *msg)
+{
+	if (!check_if_dead(philo))
+		return ;
+	pthread_mutex_lock(philo->write);
+	printf("%ld %d %s", time, philo->id, msg);
+	pthread_mutex_unlock(philo->write);
+}
+
+static int has_anyone_died(philo_t *philo, long timestamp)
+{
+	pthread_mutex_lock(philo->dead);
+	if (get_time_stamp() - philo->time_of_last_meal > philo->time_to_die)
+	{
+		print_message(philo, get_time_stamp() - timestamp, "has died\n");
+		*philo->someone_died = 1;
+		pthread_mutex_unlock(philo->dead);
+		return (1);
+	}
+	pthread_mutex_unlock(philo->dead);
+	return (0);
+}
+
+
 void	*thread_function(void *arg)
 {
 	philo_t *philo = (philo_t *)arg;
@@ -28,108 +63,26 @@ void	*thread_function(void *arg)
 		usleep(philo->time_to_sleep * 1000);
 	while (1)
 	{
-		//INICIO COMPRUEBA MUERTE
-		pthread_mutex_lock(philo->dead);
-		if(*philo->someone_died)
-		{
-			pthread_mutex_unlock(philo->dead);
-			return (NULL);
-		}
-		pthread_mutex_unlock(philo->dead);
-		// FIN COMPRUEBA MUERTE
-
-		//EMPIEZA A PENSAR
-		printf(CYAN "%ld %d is thinking\n" RESET, get_time_stamp() - timestamp, philo->id);
+		print_message(philo, get_time_stamp() - timestamp, "is thinking\n");
 		if(philo->time_to_think > 0)
 			usleep(philo->time_to_think * 1000);
-		//TERMINA DE PENSAR
-
-		//INICIO COMPRUEBA MUERTE
-		pthread_mutex_lock(philo->dead);
-		if(*philo->someone_died)
-		{
-			pthread_mutex_unlock(philo->dead);
-			return (NULL);
-		}
-		pthread_mutex_unlock(philo->dead);
-		// FIN COMPRUEBA MUERTE
-
-		//EMPIEZA COMER
 		pthread_mutex_lock(philo->right_fork);
-		printf(YELLOW "%ld %d has taken a fork\n" RESET, get_time_stamp() - timestamp, philo->id);		
+		print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");	
 		pthread_mutex_lock(philo->left_fork);
-		printf(YELLOW "%ld %d has taken a fork\n" RESET, get_time_stamp() - timestamp, philo->id);
-		printf(GREEN "%ld %d is eating\n" RESET, get_time_stamp() - timestamp, philo->id);
+		print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");	
 		pthread_mutex_lock(philo->meal_mutex);
 		philo->time_of_last_meal = get_time_stamp();
+		print_message(philo, get_time_stamp() - timestamp, "is eating\n");	
 		pthread_mutex_unlock(philo->meal_mutex);
 		usleep(philo->time_to_eat * 1000);
 		pthread_mutex_unlock(philo->right_fork);
 		pthread_mutex_unlock(philo->left_fork);
-		//TERMINA COMER
-
-		//INICIO COMPRUEBA MUERTE
-		pthread_mutex_lock(philo->dead);
-		if (get_time_stamp() - philo->time_of_last_meal > philo->time_to_die)
-		{
-			printf(RED "%ld %d died\n" RESET, get_time_stamp() - timestamp, philo->id);
-			*philo->someone_died = 1;
-			pthread_mutex_unlock(philo->dead);
-			pthread_mutex_unlock(philo->left_fork);
-			pthread_mutex_unlock(philo->right_fork);
-			return (NULL);
-		}
-		pthread_mutex_unlock(philo->dead);
-		// FIN COMPRUEBA MUERTE
-
-		//INICIO COMPRUEBA MUERTE
-		pthread_mutex_lock(philo->dead);
-		if(*philo->someone_died)
-		{
-			pthread_mutex_unlock(philo->dead);
-			return (NULL);
-		}
-		pthread_mutex_unlock(philo->dead);
-		// FIN COMPRUEBA MUERTE
-		
-		//EMPIEZA DORMIR
-		printf(BLUE "%ld %d is sleeping\n" RESET, get_time_stamp() - timestamp, philo->id);
+		if (has_anyone_died(philo, timestamp))
+			return (pthread_mutex_unlock(philo->right_fork), pthread_mutex_unlock(philo->left_fork), NULL);
+		print_message(philo, get_time_stamp() - timestamp, "is sleeping\n");
 		usleep(philo->time_to_sleep * 1000);
-		//TERMINA DORMIR
-		
-		//INICIO COMPRUEBA MUERTE
-		pthread_mutex_lock(philo->dead);
-		if(*philo->someone_died)
-		{
-			pthread_mutex_unlock(philo->dead);
+		if (has_anyone_died(philo, get_time_stamp() - timestamp))
 			return (NULL);
-		}
-		pthread_mutex_unlock(philo->dead);
-		// FIN COMPRUEBA MUERTE
-		
-		//INICIO COMPRUEBA MUERTE
-		pthread_mutex_lock(philo->dead);
-		if (get_time_stamp() - philo->time_of_last_meal > philo->time_to_die)
-		{
-			printf(RED "%ld %d died\n" RESET, get_time_stamp() - timestamp, philo->id);
-			*philo->someone_died = 1;
-			pthread_mutex_unlock(philo->dead);
-			pthread_mutex_unlock(philo->left_fork);
-			pthread_mutex_unlock(philo->right_fork);
-			return (NULL);
-		}
-		pthread_mutex_unlock(philo->dead);
-		// FIN COMPRUEBA MUERTE
-
-		//INICIO COMPRUEBA MUERTE
-		pthread_mutex_lock(philo->dead);
-		if(*philo->someone_died)
-		{
-			pthread_mutex_unlock(philo->dead);
-			return (NULL);
-		}
-		pthread_mutex_unlock(philo->dead);
-		// FIN COMPRUEBA MUERTE
 	}
 	return (NULL);
 }
@@ -142,6 +95,7 @@ int main(int argc, char **argv)
 	pthread_mutex_t	*forks;
 	pthread_mutex_t *dead;
 	pthread_mutex_t *meal_mutex;
+	pthread_mutex_t *write;
 	int				i;
 	long			number_of_philosophers;
 	int				someone_died;
@@ -153,10 +107,11 @@ int main(int argc, char **argv)
 	number_of_philosophers = ft_atol(argv[1]);
 	thread = malloc(sizeof(pthread_t) * number_of_philosophers);
 	someone_died = 0;
+	write = malloc(sizeof(pthread_mutex_t)); // 1
 	//pthread_mutex_init(&philosophers->write, NULL);
 	pthread_mutex_init(dead, NULL);
 	pthread_mutex_init(meal_mutex, NULL);
-	write(1,"Entra\n", 6);
+	pthread_mutex_init(write, NULL);
 	i = 0;
 	while (i < number_of_philosophers)
 	{
@@ -180,6 +135,7 @@ int main(int argc, char **argv)
 		philosophers[i].dead = dead;
 		philosophers[i].meal_mutex = meal_mutex;
 		philosophers[i].someone_died = &someone_died;
+		philosophers[i].write = write;
 		i++;
 	}
 	i = 0;

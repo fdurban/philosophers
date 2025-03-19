@@ -18,6 +18,7 @@ typedef struct philo {
 
 	pthread_mutex_t	*left_fork;
 	pthread_mutex_t	*right_fork;
+	pthread_mutex_t	*write;
 	pthread_mutex_t	*dead;
 	pthread_mutex_t	*meal_mutex;
 	int				id;
