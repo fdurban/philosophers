@@ -18,7 +18,6 @@ typedef struct philo {
 
 	pthread_mutex_t	*left_fork;
 	pthread_mutex_t	*right_fork;
-	pthread_mutex_t	write;
 	pthread_mutex_t	*dead;
 	pthread_mutex_t	*meal_mutex;
 	int				id;
@@ -27,6 +26,7 @@ typedef struct philo {
 	long			time_to_sleep;
 	long			time_to_die;
 	long			time_to_think;
+	int				*someone_died;
 } philo_t;
 
 typedef struct personal_timeval
