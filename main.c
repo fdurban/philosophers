@@ -6,7 +6,7 @@
 /*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/03/19 18:37:38 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/03/20 17:47:41 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,20 +19,20 @@ long	get_time_stamp()
 	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
 }
 
-static int check_if_dead(philo_t *philo)
+static int is_dead(philo_t *philo)
 {
 	pthread_mutex_lock(philo->dead);
 	if(*philo->someone_died)
 	{
 		pthread_mutex_unlock(philo->dead);
-		return (0);
+		return (1);
 	}
 	pthread_mutex_unlock(philo->dead);
-	return (1);
+	return (0);
 }
 static void	print_message(philo_t *philo, long time, char *msg)
 {
-	if (!check_if_dead(philo))
+	if (is_dead(philo))
 		return ;
 	pthread_mutex_lock(philo->write);
 	printf("%ld %d %s", time, philo->id, msg);
@@ -41,15 +41,15 @@ static void	print_message(philo_t *philo, long time, char *msg)
 
 static int has_anyone_died(philo_t *philo, long timestamp)
 {
-	pthread_mutex_lock(philo->dead);
+	pthread_mutex_lock(philo->check_dead);
 	if (get_time_stamp() - philo->time_of_last_meal > philo->time_to_die)
 	{
-		print_message(philo, get_time_stamp() - timestamp, "has died\n");
+		print_message(philo, get_time_stamp() - timestamp, "died\n");
 		*philo->someone_died = 1;
-		pthread_mutex_unlock(philo->dead);
+		pthread_mutex_unlock(philo->check_dead);
 		return (1);
 	}
-	pthread_mutex_unlock(philo->dead);
+	pthread_mutex_unlock(philo->check_dead);
 	return (0);
 }
 
@@ -66,8 +66,9 @@ void	*thread_function(void *arg)
 		print_message(philo, get_time_stamp() - timestamp, "is thinking\n");
 		if(philo->time_to_think > 0)
 			usleep(philo->time_to_think * 1000);
+	
 		pthread_mutex_lock(philo->right_fork);
-		print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");	
+		print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");
 		pthread_mutex_lock(philo->left_fork);
 		print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");	
 		pthread_mutex_lock(philo->meal_mutex);
@@ -77,11 +78,12 @@ void	*thread_function(void *arg)
 		usleep(philo->time_to_eat * 1000);
 		pthread_mutex_unlock(philo->right_fork);
 		pthread_mutex_unlock(philo->left_fork);
-		if (has_anyone_died(philo, timestamp))
-			return (pthread_mutex_unlock(philo->right_fork), pthread_mutex_unlock(philo->left_fork), NULL);
+
+		if (has_anyone_died(philo, timestamp) || is_dead(philo))
+			return (NULL);
 		print_message(philo, get_time_stamp() - timestamp, "is sleeping\n");
 		usleep(philo->time_to_sleep * 1000);
-		if (has_anyone_died(philo, get_time_stamp() - timestamp))
+		if (has_anyone_died(philo, timestamp) || is_dead(philo))
 			return (NULL);
 	}
 	return (NULL);
@@ -94,6 +96,7 @@ int main(int argc, char **argv)
 	pthread_t		*thread;
 	pthread_mutex_t	*forks;
 	pthread_mutex_t *dead;
+	pthread_mutex_t *check_dead;
 	pthread_mutex_t *meal_mutex;
 	pthread_mutex_t *write;
 	int				i;
@@ -101,15 +104,16 @@ int main(int argc, char **argv)
 	int				someone_died;
 	
 	philosophers = malloc(sizeof(philo_t) * ft_atol(argv[1]));
-	forks = malloc(sizeof(pthread_mutex_t) * ft_atol(argv[1])); // 5
-	dead = malloc(sizeof(pthread_mutex_t)); // 1
-	meal_mutex = malloc(sizeof(pthread_mutex_t)); // 1
+	forks = malloc(sizeof(pthread_mutex_t) * ft_atol(argv[1]));
+	dead = malloc(sizeof(pthread_mutex_t));
+	check_dead = malloc(sizeof(pthread_mutex_t));
+	meal_mutex = malloc(sizeof(pthread_mutex_t));
 	number_of_philosophers = ft_atol(argv[1]);
 	thread = malloc(sizeof(pthread_t) * number_of_philosophers);
 	someone_died = 0;
-	write = malloc(sizeof(pthread_mutex_t)); // 1
-	//pthread_mutex_init(&philosophers->write, NULL);
+	write = malloc(sizeof(pthread_mutex_t));
 	pthread_mutex_init(dead, NULL);
+	pthread_mutex_init(check_dead, NULL);
 	pthread_mutex_init(meal_mutex, NULL);
 	pthread_mutex_init(write, NULL);
 	i = 0;
@@ -133,6 +137,7 @@ int main(int argc, char **argv)
 		philosophers[i].left_fork = &forks[i];
 		philosophers[i].right_fork = &forks[(i + 1) %  number_of_philosophers];
 		philosophers[i].dead = dead;
+		philosophers[i].check_dead = check_dead;
 		philosophers[i].meal_mutex = meal_mutex;
 		philosophers[i].someone_died = &someone_died;
 		philosophers[i].write = write;
