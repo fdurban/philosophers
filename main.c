@@ -6,7 +6,7 @@
 /*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/03/31 17:22:47 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/03/31 17:53:07 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,12 +69,12 @@ void	*thread_function(void *arg)
 
 	
 	if (philo->id % 2 != 0)
-		usleep(philo->time_to_sleep * 1000);
+		usleep_precise(philo->time_to_sleep * 1000);
 	while (1)
 	{
 		print_message(philo, get_time_stamp() - timestamp, "is thinking\n");
 		if(philo->time_to_think > 0)
-			usleep(philo->time_to_think * 1000);
+			usleep_precise(philo->time_to_think * 1000);
 		if (philo->id % 2 == 0)
 		{
 			pthread_mutex_lock(philo->right_fork);
@@ -93,7 +93,7 @@ void	*thread_function(void *arg)
 		philo->time_of_last_meal = get_time_stamp();
 		print_message(philo, get_time_stamp() - timestamp, "is eating\n");	
 		pthread_mutex_unlock(philo->meal_mutex);
-		usleep(philo->time_to_eat * 1000);
+		usleep_precise(philo->time_to_eat * 1000);
 		philo->meals_eaten++;
 		pthread_mutex_unlock(philo->right_fork);
 		pthread_mutex_unlock(philo->left_fork);
@@ -102,7 +102,7 @@ void	*thread_function(void *arg)
 		if (has_anyone_died(philo, timestamp) || is_dead(philo))
 			return (NULL);
 		print_message(philo, get_time_stamp() - timestamp, "is sleeping\n");
-		usleep(philo->time_to_sleep * 1000);
+		usleep_precise(philo->time_to_sleep * 1000);
 		if (has_anyone_died(philo, timestamp) || is_dead(philo))
 			return (NULL);
 	}
