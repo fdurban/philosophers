@@ -6,7 +6,7 @@
 /*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/03/20 18:33:08 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/03/31 17:22:47 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,12 +53,21 @@ static int has_anyone_died(philo_t *philo, long timestamp)
 	return (0);
 }
 
+void	usleep_precise(long time)
+{
+	long	start;
+
+	start = get_time_stamp();
+	while(get_time_stamp() - start > time)
+		usleep(time / 5);
+}
 
 void	*thread_function(void *arg)
 {
 	philo_t *philo = (philo_t *)arg;
 	long timestamp = get_time_stamp();
 
+	
 	if (philo->id % 2 != 0)
 		usleep(philo->time_to_sleep * 1000);
 	while (1)
@@ -66,19 +75,30 @@ void	*thread_function(void *arg)
 		print_message(philo, get_time_stamp() - timestamp, "is thinking\n");
 		if(philo->time_to_think > 0)
 			usleep(philo->time_to_think * 1000);
-	
-		pthread_mutex_lock(philo->right_fork);
-		print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");
-		pthread_mutex_lock(philo->left_fork);
-		print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");	
+		if (philo->id % 2 == 0)
+		{
+			pthread_mutex_lock(philo->right_fork);
+			print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");
+			pthread_mutex_lock(philo->left_fork);
+			print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");		
+		}
+		else
+		{
+			pthread_mutex_lock(philo->left_fork);
+			print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");
+			pthread_mutex_lock(philo->right_fork);
+			print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");	
+		}
 		pthread_mutex_lock(philo->meal_mutex);
 		philo->time_of_last_meal = get_time_stamp();
 		print_message(philo, get_time_stamp() - timestamp, "is eating\n");	
 		pthread_mutex_unlock(philo->meal_mutex);
 		usleep(philo->time_to_eat * 1000);
+		philo->meals_eaten++;
 		pthread_mutex_unlock(philo->right_fork);
 		pthread_mutex_unlock(philo->left_fork);
-
+		if (philo->number_of_times_each_philosopher_must_eat && (philo->number_of_times_each_philosopher_must_eat < philo->meals_eaten))
+			break;
 		if (has_anyone_died(philo, timestamp) || is_dead(philo))
 			return (NULL);
 		print_message(philo, get_time_stamp() - timestamp, "is sleeping\n");
@@ -91,7 +111,6 @@ void	*thread_function(void *arg)
 
 int main(int argc, char **argv)
 {
-	printf("Number of arguments is %d\n", argc);
 	philo_t			*philosophers;
 	pthread_t		*thread;
 	pthread_mutex_t	*forks;
@@ -119,7 +138,7 @@ int main(int argc, char **argv)
 	i = 0;
 	while (i < number_of_philosophers)
 	{
-		philosophers[i].id = i;
+		philosophers[i].id = i + 1;
 		if (pthread_mutex_init(&forks[i], NULL) != 0)
 		{
 			perror("Error inicializando el mutex");
@@ -133,6 +152,11 @@ int main(int argc, char **argv)
 		philosophers[i].time_to_die = ft_atol(argv[2]);
 		philosophers[i].time_to_eat = ft_atol(argv[3]);
 		philosophers[i].time_to_sleep = ft_atol(argv[4]);
+		if(argc == 6)
+		{			
+			philosophers[i].number_of_times_each_philosopher_must_eat = ft_atol(argv[5]);
+			philosophers[i].meals_eaten = 0;
+		}
 		philosophers[i].time_to_think = philosophers[i].time_to_die - (philosophers[i].time_to_sleep + philosophers[i].time_to_eat);
 		philosophers[i].left_fork = &forks[i];
 		philosophers[i].right_fork = &forks[(i + 1) %  number_of_philosophers];

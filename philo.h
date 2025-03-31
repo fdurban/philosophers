@@ -30,6 +30,8 @@ typedef struct philo {
 	long			time_to_think;
 	long			timestamp;
 	int				*someone_died;
+	long			number_of_times_each_philosopher_must_eat;
+	long			meals_eaten;
 } philo_t;
 
 typedef struct personal_timeval
