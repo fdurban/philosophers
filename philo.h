@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "philo.h"
+#define PHILO_MAX 200
 
 
 typedef struct philo {
