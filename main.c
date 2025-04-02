@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fernando <fernando@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/04/01 20:04:01 by fernando         ###   ########.fr       */
+/*   Updated: 2025/04/02 17:29:57 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,52 +19,49 @@ long	get_time_stamp()
 	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
 }
 
-static int is_dead(philo_t *philo)
-{
-	pthread_mutex_lock(philo->dead);
-	if(*philo->someone_died)
+	int has_anyone_died(philo_t *philo)
 	{
-		pthread_mutex_unlock(philo->dead);
-		return (1);
-	}
-	pthread_mutex_unlock(philo->dead);
-	return (0);
-}
-static void	print_message(philo_t *philo, long time, char *msg)
-{
-	if (is_dead(philo))
-		return ;
-	pthread_mutex_lock(philo->write);
-	printf("%ld %d %s", time, philo->id, msg);
-	pthread_mutex_unlock(philo->write);
-}
 
-static int has_anyone_died(philo_t *philo, long timestamp)
-{
-	pthread_mutex_lock(philo->check_dead);
-	if (get_time_stamp() - philo->time_of_last_meal > philo->time_to_die)
-	{
-		print_message(philo, get_time_stamp() - timestamp, "died\n");
-		*philo->someone_died = 1;
+		pthread_mutex_lock(philo->check_dead);
+		if (get_time_stamp() - philo->time_of_last_meal > philo->time_to_die)
+		{
+			if (!*philo->someone_died)
+			{
+				printf("%d died\n", philo->id);
+				*philo->someone_died = 1;
+			}
+			pthread_mutex_unlock(philo->check_dead);
+			return (1);
+		}
 		pthread_mutex_unlock(philo->check_dead);
-		return (1);
+		return (0);
 	}
-	pthread_mutex_unlock(philo->check_dead);
-	return (0);
-}
-
-void	usleep_precise(long time, philo_t *philo)
-{
-	long	start;
-
-	start = get_time_stamp();
-	while(get_time_stamp() - start < time)
+	static void	print_message(philo_t *philo, long time, char *msg)
 	{
-		if (has_anyone_died(philo, start) || is_dead(philo))
-			break;
-		usleep(time / 5);
+		pthread_mutex_lock(philo->write);
+		if (has_anyone_died(philo))
+		{
+			pthread_mutex_unlock(philo->write);
+			return ;
+		}
+		printf("%ld %d %s", time, philo->id, msg);
+		pthread_mutex_unlock(philo->write);
 	}
-}
+
+	// FUNCION QUE HACE USO DE USLEEP PERO CON CONPROBACION DE MUERTE CADA VEZ (COMPROBAR HAS_ANYONE_DIED)
+	void	usleep_precise(long time, philo_t *philo)
+	{
+		long	start;
+
+		start = get_time_stamp();
+		while(get_time_stamp() - start < time)
+		{
+			if(has_anyone_died(philo))
+				break;
+			usleep(time/5);
+		}
+		return ;
+	}
 
 void	*thread_function(void *arg)
 {
@@ -74,27 +71,29 @@ void	*thread_function(void *arg)
 	pthread_mutex_lock(philo->meal_mutex);
 	philo->time_of_last_meal = get_time_stamp();
 	pthread_mutex_unlock(philo->meal_mutex);
-	if (philo->id % 2 != 0 && philo->id == 1)
+	if (philo->id % 2 != 0)
+	{
+		print_message(philo, get_time_stamp() - timestamp, "is sleeping\n");
 		usleep_precise(philo->time_to_sleep, philo);
+	}
 	while (1)
 	{
-		print_message(philo, get_time_stamp() - timestamp, "is thinking\n");
-		if(philo->time_to_think > 0)
-			usleep_precise(philo->time_to_think, philo);
+		//LOS PARES COGEN LOS TENEDORES
 		if (philo->id % 2 == 0)
 		{
-			pthread_mutex_lock(philo->right_fork);
-			print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");
 			pthread_mutex_lock(philo->left_fork);
+			print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");
+			pthread_mutex_lock(philo->right_fork);
 			print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");		
 		}
 		else
 		{
-			pthread_mutex_lock(philo->left_fork);
-			print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");
 			pthread_mutex_lock(philo->right_fork);
+			print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");
+			pthread_mutex_lock(philo->left_fork);
 			print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");	
 		}
+		//LOS FILOSOFOS EMPIEZAN A COMER
 		pthread_mutex_lock(philo->meal_mutex);
 		philo->time_of_last_meal = get_time_stamp();
 		print_message(philo, get_time_stamp() - timestamp, "is eating\n");	
@@ -103,12 +102,13 @@ void	*thread_function(void *arg)
 		philo->meals_eaten++;
 		pthread_mutex_unlock(philo->right_fork);
 		pthread_mutex_unlock(philo->left_fork);
-		if (philo->number_of_times_each_philosopher_must_eat && (philo->number_of_times_each_philosopher_must_eat < philo->meals_eaten))
-			break;
+		//LOS FILOSOFOS TERMINAN DE COMER
+		//LOS FILOSOFOS EMPIEZAN A DORMIR
 		print_message(philo, get_time_stamp() - timestamp, "is sleeping\n");
 		usleep_precise(philo->time_to_sleep, philo);
-		if (has_anyone_died(philo, timestamp) || is_dead(philo))
-			return (NULL);
+		//LOS FILOSOFOS TERMINAN DE DORMIR
+		//LOS FILOSOFOS EMPIEZAN A PENSAR EL RESTO DELE TIEMPO QUE LE QUEDA
+		print_message(philo, get_time_stamp() - timestamp, "is thinking\n");
 	}
 	return (NULL);
 }
