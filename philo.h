@@ -24,12 +24,11 @@ typedef struct philo {
 	pthread_mutex_t	*check_dead;
 	pthread_mutex_t	*meal_mutex;
 	int				id;
-	long			time_to_eat;
 	long			time_of_last_meal;
+	long			time_to_eat;
 	long			time_to_sleep;
 	long			time_to_die;
 	long			time_to_think;
-	long			timestamp;
 	int				*someone_died;
 	long			number_of_times_each_philosopher_must_eat;
 	long			meals_eaten;

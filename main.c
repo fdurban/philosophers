@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fernando <fernando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/04/03 17:40:47 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/04/04 18:01:16 by fernando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,7 +72,7 @@ void	usleep_precise(long time, philo_t *philo)
 void	*thread_function(void *arg)
 {
 	philo_t *philo = (philo_t *)arg;
-	long timestamp = get_time_stamp();
+	long start_time = get_time_stamp();
 
 	pthread_mutex_lock(philo->meal_mutex);
 	philo->time_of_last_meal = get_time_stamp();
@@ -85,16 +85,24 @@ void	*thread_function(void *arg)
 	while (!*philo->someone_died)
 	{
 		//COGEN LOS TENEDORES
-
+		if (philo->id % 2 == 0)
+		{
 			pthread_mutex_lock(philo->left_fork);
-			print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");
+			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
 			pthread_mutex_lock(philo->right_fork);
-			print_message(philo, get_time_stamp() - timestamp, "has taken a fork\n");	
-
+			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
+		}
+		else
+		{
+			pthread_mutex_lock(philo->right_fork);
+			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
+			pthread_mutex_lock(philo->left_fork);
+			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
+		}
 		//LOS FILOSOFOS EMPIEZAN A COMER
 		pthread_mutex_lock(philo->meal_mutex);
 		philo->time_of_last_meal = get_time_stamp();
-		print_message(philo, get_time_stamp() - timestamp, "is eating\n");	
+		print_message(philo, get_time_stamp() - start_time, "is eating\n");	
 		pthread_mutex_unlock(philo->meal_mutex);
 		usleep_precise(philo->time_to_eat, philo);
 		philo->meals_eaten++;
@@ -102,11 +110,11 @@ void	*thread_function(void *arg)
 		pthread_mutex_unlock(philo->left_fork);
 		//LOS FILOSOFOS TERMINAN DE COMER
 		//LOS FILOSOFOS EMPIEZAN A DORMIR
-		print_message(philo, get_time_stamp() - timestamp, "is sleeping\n");
+		print_message(philo, get_time_stamp() - start_time, "is sleeping\n");
 		usleep_precise(philo->time_to_sleep, philo);
 		//LOS FILOSOFOS TERMINAN DE DORMIR
 		//LOS FILOSOFOS EMPIEZAN A PENSAR EL RESTO DELE TIEMPO QUE LE QUEDA
-		print_message(philo, get_time_stamp() - timestamp, "is thinking\n");
+		print_message(philo, get_time_stamp() - start_time, "is thinking\n");
 	}
 	return (NULL);
 }
