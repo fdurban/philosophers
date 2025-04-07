@@ -41,7 +41,7 @@ int has_anyone_died(philo_t *philo)
 static void	print_message(philo_t *philo, long time, char *msg)
 {
 	pthread_mutex_lock(philo->write);
-	//printf("Confirmacion de que le filosofo ha muerto %d\n", has_anyone_died(philo));
+	// printf("Confirmacion de que le filosofo ha muerto %d\n", has_anyone_died(philo));
 	if (has_anyone_died(philo))
 	{
 		pthread_mutex_unlock(philo->write);
@@ -64,7 +64,7 @@ void	usleep_precise(long time, philo_t *philo)
 		{
 			break ;
 		}
-		usleep(1000);
+		usleep(100);
 	}
 	return ;
 }
@@ -85,20 +85,10 @@ void	*thread_function(void *arg)
 	while (!*philo->someone_died)
 	{
 		//COGEN LOS TENEDORES
-		if (philo->id % 2 == 0)
-		{
-			pthread_mutex_lock(philo->left_fork);
-			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
-			pthread_mutex_lock(philo->right_fork);
-			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
-		}
-		else
-		{
-			pthread_mutex_lock(philo->right_fork);
-			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
-			pthread_mutex_lock(philo->left_fork);
-			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
-		}
+		pthread_mutex_lock(philo->left_fork);
+		print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
+		pthread_mutex_lock(philo->right_fork);
+		print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
 		//LOS FILOSOFOS EMPIEZAN A COMER
 		pthread_mutex_lock(philo->meal_mutex);
 		philo->time_of_last_meal = get_time_stamp();
