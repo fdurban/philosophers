@@ -6,13 +6,13 @@
 /*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/04/07 17:46:08 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/04/08 14:03:29 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
-long	get_time_stamp()
+long	get_time_stamp(void)
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
@@ -109,25 +109,9 @@ void	*thread_function(void *arg)
 	return (NULL);
 }
 
-int main(int argc, char **argv)
+int	initialize_forks(long	number_of_philosophers, philo_t	philosophers[PHILO_MAX], pthread_mutex_t forks[PHILO_MAX])
 {
-	philo_t			philosophers[PHILO_MAX];
-	pthread_t		thread[PHILO_MAX];
-	pthread_mutex_t	forks[PHILO_MAX];
-	pthread_mutex_t dead;
-	pthread_mutex_t check_dead;
-	pthread_mutex_t meal_mutex;
-	pthread_mutex_t write;
-	int				i;
-	long			number_of_philosophers;
-	int				someone_died;
-
-	number_of_philosophers = ft_atol(argv[1]);
-	someone_died = 0;
-	pthread_mutex_init(&dead, NULL);
-	pthread_mutex_init(&check_dead, NULL);
-	pthread_mutex_init(&write, NULL);
-	pthread_mutex_init(&meal_mutex, NULL);
+	int	i;
 	i = 0;
 	while (i < number_of_philosophers)
 	{
@@ -139,6 +123,15 @@ int main(int argc, char **argv)
 		}
 		i++;
 	}
+	return (0);
+}
+
+int	initialize_philosophers(int argc, char **argv, long number_of_philosophers,
+ philo_t philosophers[PHILO_MAX], pthread_mutex_t forks[PHILO_MAX], pthread_mutex_t dead, pthread_mutex_t check_dead,
+ pthread_mutex_t meal_mutex, int someone_died, pthread_mutex_t write)
+{
+	int	i;
+
 	i = 0;
 	while (i < number_of_philosophers)
 	{
@@ -159,6 +152,12 @@ int main(int argc, char **argv)
 		philosophers[i].write = &write;
 		i++;
 	}
+}
+
+int	create_threads(philo_t	philosophers[PHILO_MAX], pthread_t	thread[PHILO_MAX], long	number_of_philosophers)
+{
+	int	i;
+	
 	i = 0;
 	while (i < number_of_philosophers)
 	{
@@ -169,6 +168,13 @@ int main(int argc, char **argv)
 		}
 		i++;
 	}
+	return (0);
+}
+
+int	end_threads(long number_of_philosophers, pthread_t thread[PHILO_MAX])
+{
+	int	i;
+
 	i = 0;
 	while (i < number_of_philosophers)
 	{
@@ -179,6 +185,32 @@ int main(int argc, char **argv)
 		}
 		i++;
 	}
+	return (0);
+}
+
+int main(int argc, char **argv)
+{
+	philo_t			philosophers[PHILO_MAX];
+	pthread_t		thread[PHILO_MAX];
+	pthread_mutex_t	forks[PHILO_MAX];
+	pthread_mutex_t dead;
+	pthread_mutex_t check_dead;
+	pthread_mutex_t meal_mutex;
+	pthread_mutex_t write;
+	int				i;
+	long			number_of_philosophers;
+	int				someone_died;
+
+	number_of_philosophers = ft_atol(argv[1]);
+	someone_died = 0;
+	pthread_mutex_init(&dead, NULL);
+	pthread_mutex_init(&check_dead, NULL);
+	pthread_mutex_init(&write, NULL);
+	pthread_mutex_init(&meal_mutex, NULL);
+	initialize_forks(number_of_philosophers, philosophers, forks);
+	initialize_philosophers(argc, argv, number_of_philosophers, philosophers,forks, dead, check_dead, meal_mutex, someone_died, write);
+	create_threads(philosophers, thread, number_of_philosophers);
+	end_threads(number_of_philosophers, thread);
 	pthread_mutex_destroy(&dead);
 	pthread_mutex_destroy(&check_dead);
 	pthread_mutex_destroy(&meal_mutex);
