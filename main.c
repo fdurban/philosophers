@@ -6,7 +6,7 @@
 /*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/04/08 14:03:29 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/04/16 17:42:39 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,7 +79,6 @@ void	*thread_function(void *arg)
 	pthread_mutex_unlock(philo->meal_mutex);
 	if (philo->id % 2 != 0)
 	{
-/* 		print_message(philo, get_time_stamp() - timestamp, "is sleeping\n"); */
 		usleep_precise(philo->time_to_sleep, philo);
 	}
 	while (!*philo->someone_died)
@@ -126,10 +125,10 @@ int	initialize_forks(long	number_of_philosophers, philo_t	philosophers[PHILO_MAX
 	return (0);
 }
 
-int	initialize_philosophers(int argc, char **argv, long number_of_philosophers,
- philo_t philosophers[PHILO_MAX], pthread_mutex_t forks[PHILO_MAX], pthread_mutex_t dead, pthread_mutex_t check_dead,
- pthread_mutex_t meal_mutex, int someone_died, pthread_mutex_t write)
-{
+void	initialize_philosophers(int argc, char **argv, long number_of_philosophers,
+ philo_t philosophers[PHILO_MAX], pthread_mutex_t forks[PHILO_MAX], pthread_mutex_t *dead, pthread_mutex_t *check_dead,
+ pthread_mutex_t *meal_mutex, int *someone_died, pthread_mutex_t *write)
+{	
 	int	i;
 
 	i = 0;
@@ -145,11 +144,11 @@ int	initialize_philosophers(int argc, char **argv, long number_of_philosophers,
 		philosophers[i].time_to_think = philosophers[i].time_to_die - (philosophers[i].time_to_sleep + philosophers[i].time_to_eat);
 		philosophers[i].left_fork = &forks[i];
 		philosophers[i].right_fork = &forks[(i + 1) %  number_of_philosophers];
-		philosophers[i].dead = &dead;
-		philosophers[i].check_dead = &check_dead;
-		philosophers[i].meal_mutex = &meal_mutex;
-		philosophers[i].someone_died = &someone_died;
-		philosophers[i].write = &write;
+		philosophers[i].dead = dead;
+		philosophers[i].check_dead = check_dead;
+		philosophers[i].meal_mutex = meal_mutex;
+		philosophers[i].someone_died = someone_died;
+		philosophers[i].write = write;
 		i++;
 	}
 }
@@ -208,7 +207,7 @@ int main(int argc, char **argv)
 	pthread_mutex_init(&write, NULL);
 	pthread_mutex_init(&meal_mutex, NULL);
 	initialize_forks(number_of_philosophers, philosophers, forks);
-	initialize_philosophers(argc, argv, number_of_philosophers, philosophers,forks, dead, check_dead, meal_mutex, someone_died, write);
+	initialize_philosophers(argc, argv, number_of_philosophers, philosophers,forks, &dead, &check_dead, &meal_mutex, &someone_died, &write);
 	create_threads(philosophers, thread, number_of_philosophers);
 	end_threads(number_of_philosophers, thread);
 	pthread_mutex_destroy(&dead);
