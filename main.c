@@ -6,7 +6,7 @@
 /*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/04/16 17:42:39 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/06/18 16:39:45 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,14 +14,14 @@
 
 long	get_time_stamp(void)
 {
-	struct timeval tv;
+	struct timeval	tv;
+
 	gettimeofday(&tv, NULL);
 	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
 }
 
-int has_anyone_died(philo_t *philo)
+int	has_anyone_died(philo_t *philo)
 {
-
 	pthread_mutex_lock(philo->check_dead);
 	if (*philo->someone_died)
 	{
@@ -38,10 +38,10 @@ int has_anyone_died(philo_t *philo)
 	pthread_mutex_unlock(philo->check_dead);
 	return (0);
 }
+
 static void	print_message(philo_t *philo, long time, char *msg)
 {
 	pthread_mutex_lock(philo->write);
-	// printf("Confirmacion de que le filosofo ha muerto %d\n", has_anyone_died(philo));
 	if (has_anyone_died(philo))
 	{
 		pthread_mutex_unlock(philo->write);
@@ -51,20 +51,19 @@ static void	print_message(philo_t *philo, long time, char *msg)
 	pthread_mutex_unlock(philo->write);
 }
 
-	// FUNCION QUE HACE USO DE USLEEP PERO CON COMPROBACION DE MUERTE CADA VEZ (COMPROBAR HAS_ANYONE_DIED)
+// FUNCION QUE HACE USO DE USLEEP PERO CON COMPROBACION DE MUERTE CADA VEZ
 void	usleep_precise(long time, philo_t *philo)
 {
 	long	start;
 	
 	start = get_time_stamp();
-	while(get_time_stamp() - start < time)
+	while (get_time_stamp() - start < time)
 	{
-		//printf("Confirmacion de que le filosofo ha muerto %d\n", has_anyone_died(philo));
 		if(has_anyone_died(philo))
 		{
 			break ;
 		}
-		usleep(100);
+		usleep(1);
 	}
 	return ;
 }
@@ -81,13 +80,23 @@ void	*thread_function(void *arg)
 	{
 		usleep_precise(philo->time_to_sleep, philo);
 	}
-	while (!*philo->someone_died)
+	while (!has_anyone_died(philo))
 	{
 		//COGEN LOS TENEDORES
-		pthread_mutex_lock(philo->left_fork);
-		print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
-		pthread_mutex_lock(philo->right_fork);
-		print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
+		if (philo->id % 2 == 0)
+		{
+			pthread_mutex_lock(philo->right_fork);
+			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
+			pthread_mutex_lock(philo->left_fork);
+			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
+		}
+		else
+		{
+			pthread_mutex_lock(philo->left_fork);
+			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
+			pthread_mutex_lock(philo->right_fork);
+			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
+		}
 		//LOS FILOSOFOS EMPIEZAN A COMER
 		pthread_mutex_lock(philo->meal_mutex);
 		philo->time_of_last_meal = get_time_stamp();
@@ -95,8 +104,8 @@ void	*thread_function(void *arg)
 		pthread_mutex_unlock(philo->meal_mutex);
 		usleep_precise(philo->time_to_eat, philo);
 		philo->meals_eaten++;
-		pthread_mutex_unlock(philo->right_fork);
 		pthread_mutex_unlock(philo->left_fork);
+		pthread_mutex_unlock(philo->right_fork);
 		//LOS FILOSOFOS TERMINAN DE COMER
 		//LOS FILOSOFOS EMPIEZAN A DORMIR
 		print_message(philo, get_time_stamp() - start_time, "is sleeping\n");
@@ -108,7 +117,8 @@ void	*thread_function(void *arg)
 	return (NULL);
 }
 
-int	initialize_forks(long	number_of_philosophers, philo_t	philosophers[PHILO_MAX], pthread_mutex_t forks[PHILO_MAX])
+int	initialize_forks(long	number_of_philosophers,
+philo_t	philosophers[PHILO_MAX], pthread_mutex_t forks[PHILO_MAX])
 {
 	int	i;
 	i = 0;
@@ -125,9 +135,11 @@ int	initialize_forks(long	number_of_philosophers, philo_t	philosophers[PHILO_MAX
 	return (0);
 }
 
-void	initialize_philosophers(int argc, char **argv, long number_of_philosophers,
- philo_t philosophers[PHILO_MAX], pthread_mutex_t forks[PHILO_MAX], pthread_mutex_t *dead, pthread_mutex_t *check_dead,
- pthread_mutex_t *meal_mutex, int *someone_died, pthread_mutex_t *write)
+void	initialize_philosophers(int argc, char **argv,
+long number_of_philosophers,
+philo_t philosophers[PHILO_MAX], pthread_mutex_t forks[PHILO_MAX],
+pthread_mutex_t *dead, pthread_mutex_t *check_dead,
+pthread_mutex_t *meal_mutex, int *someone_died, pthread_mutex_t *write)
 {	
 	int	i;
 
