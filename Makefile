@@ -1,7 +1,6 @@
 NAME = philo
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror
+CFLAGS = -g -fsanitize=thread -Wall -Wextra -Werror -lpthread
 CFILES = main.c philo_utils.c
-# -fsanitize=thread 
 all:
 	$(CC) $(CFLAGS) $(CFILES) -o $(NAME)
