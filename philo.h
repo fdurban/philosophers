@@ -14,15 +14,20 @@
 #include "philo.h"
 #define PHILO_MAX 200
 
+typedef struct shared_data {
+	pthread_mutex_t	dead;
+	pthread_mutex_t	check_dead;
+	pthread_mutex_t	meal_mutex;
+	pthread_mutex_t	write;
+	int				someone_died;
+	int				number_of_philosophers;
+} shared_data_t;
 
 typedef struct philo {
 
 	pthread_mutex_t	*left_fork;
 	pthread_mutex_t	*right_fork;
-	pthread_mutex_t	*write;
-	pthread_mutex_t	*dead;
-	pthread_mutex_t	*check_dead;
-	pthread_mutex_t	*meal_mutex;
+	shared_data_t	*shared_data;
 	int				id;
 	long			time_of_last_meal;
 	long			time_to_eat;
@@ -33,6 +38,7 @@ typedef struct philo {
 	long			number_of_times_each_philosopher_must_eat;
 	long			meals_eaten;
 } philo_t;
+
 
 typedef struct personal_timeval
 {
