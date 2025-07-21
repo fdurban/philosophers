@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "philo.h"
-#define PHILO_MAX 200
 
 typedef struct shared_data {
 	pthread_mutex_t	dead;
@@ -21,6 +20,7 @@ typedef struct shared_data {
 	pthread_mutex_t	write;
 	int				someone_died;
 	int				number_of_philosophers;
+	long			start_time;
 } shared_data_t;
 
 typedef struct philo {
@@ -39,6 +39,10 @@ typedef struct philo {
 	long			meals_eaten;
 } philo_t;
 
+typedef struct s_philo_monitor_args {
+	philo_t	*philosophers;
+	long	number_of_philosophers;
+} philo_monitor_args;
 
 typedef struct personal_timeval
 {

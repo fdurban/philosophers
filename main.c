@@ -6,7 +6,7 @@
 /*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/06/27 16:07:57 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/07/21 18:06:46 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,30 +51,37 @@ void	usleep_precise(long time, philo_t *philo)
 		{
 			break ;
 		}
-		usleep(1);
+		usleep(1000);
 	}
 	return ;
 }
 
 void *monitor_function(void *arg)
 {
-	philo_t *philosophers = (philo_t *)arg;
+	philo_monitor_args *args = (philo_monitor_args *)arg;
+	philo_t *philosophers = args->philosophers;
+	long num = args->number_of_philosophers;
+
 	int i;
-	
 	while (1)
 	{
 		i = 0;
-		while (i < PHILO_MAX && philosophers[i].id != 0)
+		while (i < num && philosophers[i].id != 0)
 		{
 			pthread_mutex_lock(&philosophers[i].shared_data->meal_mutex);
-			if (get_time_stamp() - philosophers[i].time_of_last_meal > philosophers[i].time_to_die)
+			// printf("Valor de time_stamp %ld\n",get_time_stamp());
+			// printf("Valor de time of last meal %ld\n", philosophers[i].time_of_last_meal);
+			// printf("Valor de time to die %ld\n", philosophers[i].time_to_die);
+			long current_time = get_time_stamp();
+			long time_since_last_meal = current_time - philosophers[i].time_of_last_meal;
+			if (time_since_last_meal > philosophers[i].time_to_die)
 			{
 				pthread_mutex_unlock(&philosophers[i].shared_data->meal_mutex);
 				pthread_mutex_lock(&philosophers[i].shared_data->check_dead);
 				if (!philosophers[i].shared_data->someone_died)
 				{
 					philosophers[i].shared_data->someone_died = 1;
-					printf("%ld %d died\n", get_time_stamp(), philosophers[i].id);
+					printf("%ld %d died\n", get_time_stamp()- philosophers[i].time_of_last_meal, philosophers[i].id);
 				}
 				pthread_mutex_unlock(&philosophers[i].shared_data->check_dead);
 				return NULL;
@@ -91,16 +98,15 @@ void *monitor_function(void *arg)
 void	*thread_function(void *arg)
 {
 	philo_t *philo = (philo_t *)arg;
-	long start_time = get_time_stamp();
+	long start_time;
 
-	if (philo->id == 1)
-		usleep_precise(philo->time_to_die + 100, philo);
+	start_time = philo->shared_data->start_time;
 	pthread_mutex_lock(&philo->shared_data->meal_mutex);
 	philo->time_of_last_meal = get_time_stamp();
 	pthread_mutex_unlock(&philo->shared_data->meal_mutex);
 	if (philo->id % 2 != 0)
 	{
-		usleep_precise(philo->time_to_sleep, philo);
+		usleep_precise(1, philo);
 	}
 	while (!has_anyone_died(philo))
 	{
@@ -122,6 +128,7 @@ void	*thread_function(void *arg)
 		//LOS FILOSOFOS EMPIEZAN A COMER
 		pthread_mutex_lock(&philo->shared_data->meal_mutex);
 		philo->time_of_last_meal = get_time_stamp();
+		//printf("Time of last meal %ld\n", get_time_stamp() - start_time);
 		print_message(philo, get_time_stamp() - start_time, "is eating\n");	
 		pthread_mutex_unlock(&philo->shared_data->meal_mutex);
 		usleep_precise(philo->time_to_eat, philo);
@@ -139,7 +146,7 @@ void	*thread_function(void *arg)
 	return (NULL);
 }
 
-int	create_threads(philo_t	philosophers[PHILO_MAX], pthread_t	thread[PHILO_MAX], long	number_of_philosophers)
+int	create_threads(philo_t	*philosophers, pthread_t	*thread, long	number_of_philosophers)
 {
 	int	i;
 	
@@ -156,7 +163,7 @@ int	create_threads(philo_t	philosophers[PHILO_MAX], pthread_t	thread[PHILO_MAX],
 	return (0);
 }
 
-int	end_threads(long number_of_philosophers, pthread_t thread[PHILO_MAX])
+int	end_threads(long number_of_philosophers, pthread_t *thread)
 {
 	int	i;
 
@@ -184,14 +191,13 @@ void	initialize_mutexes(shared_data_t *shared)
 
 
 int	initialize_forks(long	number_of_philosophers,
-philo_t	philosophers[PHILO_MAX], pthread_mutex_t forks[PHILO_MAX])
+philo_t	*philosophers, pthread_mutex_t *forks)
 {
 	int	i;
 	i = 0;
 	while (i < number_of_philosophers)
 	{
 		philosophers[i].id = i + 1;
-		printf("valor de id es %d\n", philosophers[i].id);
 		if (pthread_mutex_init(&forks[i], NULL) != 0)
 		{
 			perror("Error inicializando el mutex");
@@ -205,7 +211,7 @@ philo_t	philosophers[PHILO_MAX], pthread_mutex_t forks[PHILO_MAX])
 void	initialize_philosophers(
 int argc, char **argv,
 long number_of_philosophers,
-philo_t philosophers[PHILO_MAX], pthread_mutex_t forks[PHILO_MAX],
+philo_t *philosophers, pthread_mutex_t *forks,
 shared_data_t *shared)
 {	
 	int	i;
@@ -230,23 +236,39 @@ shared_data_t *shared)
 
 int main(int argc, char **argv)
 {
-	philo_t			philosophers[PHILO_MAX];
-	pthread_t		thread[PHILO_MAX];
+	philo_t			*philosophers;
+	pthread_t		*thread;
 	pthread_t		monitor;
-	pthread_mutex_t	forks[PHILO_MAX];
+	pthread_mutex_t	*forks;
 	shared_data_t	shared;
 	int				i;
 	long			number_of_philosophers;
 
 	number_of_philosophers = ft_atol(argv[1]);
 	shared.someone_died = 0;
+	shared.start_time = get_time_stamp();
+	philosophers = malloc(sizeof(philo_t) * number_of_philosophers);
+	thread = malloc(sizeof(pthread_t) * number_of_philosophers);
+	forks = malloc(sizeof(pthread_mutex_t) * number_of_philosophers);
+	if (!philosophers || !thread || !forks)
+	{
+		perror("Error al reservar memoria");
+		return (1);
+	}
 	initialize_mutexes(&shared);
 	initialize_forks(number_of_philosophers, philosophers, forks);
 	initialize_philosophers(argc, argv, number_of_philosophers, philosophers,forks, &shared);
 	create_threads(philosophers, thread, number_of_philosophers);
-	end_threads(number_of_philosophers, thread);
-	pthread_create(&monitor, NULL, &monitor_function, philosophers);
+	philo_monitor_args *args = malloc(sizeof(philo_monitor_args));
+	args->philosophers = philosophers;
+	args->number_of_philosophers = number_of_philosophers;
+	if (pthread_create(&monitor, NULL, &monitor_function, args) != 0)
+	{
+		perror("Error creando el monitor");
+		return (1);
+	}
 	pthread_join(monitor, NULL);
+	end_threads(number_of_philosophers, thread);
 	pthread_mutex_destroy(&shared.dead);
 	pthread_mutex_destroy(&shared.check_dead);
 	pthread_mutex_destroy(&shared.meal_mutex);
