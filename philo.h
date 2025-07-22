@@ -16,11 +16,11 @@
 typedef struct shared_data {
 	pthread_mutex_t	dead;
 	pthread_mutex_t	check_dead;
-	pthread_mutex_t	meal_mutex;
 	pthread_mutex_t	write;
 	int				someone_died;
 	int				number_of_philosophers;
 	long			start_time;
+	long			check_interval;
 } shared_data_t;
 
 typedef struct philo {
@@ -28,6 +28,7 @@ typedef struct philo {
 	pthread_mutex_t	*left_fork;
 	pthread_mutex_t	*right_fork;
 	shared_data_t	*shared_data;
+	pthread_mutex_t	meal_mutex;
 	int				id;
 	long			time_of_last_meal;
 	long			time_to_eat;
@@ -39,10 +40,24 @@ typedef struct philo {
 	long			meals_eaten;
 } philo_t;
 
+
+
 typedef struct s_philo_monitor_args {
 	philo_t	*philosophers;
 	long	number_of_philosophers;
 } philo_monitor_args;
+
+typedef struct s_simulation {
+	int					argc;
+	char				**argv;
+	long				number_of_philosophers;
+	philo_t				*philosophers;
+	pthread_t			*threads;
+	pthread_t			monitor;
+	pthread_mutex_t		*forks;
+	shared_data_t		shared;
+	philo_monitor_args	*monitor_args;
+}	t_simulation;
 
 typedef struct personal_timeval
 {
