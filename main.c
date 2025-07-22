@@ -6,7 +6,7 @@
 /*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/07/22 16:49:47 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/07/22 17:29:01 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,22 +95,22 @@ void	*thread_function(void *arg)
 		//COGEN LOS TENEDORES
 		if (philo->id % 2 == 0)
 		{
-			pthread_mutex_lock(philo->right_fork);
-			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
 			pthread_mutex_lock(philo->left_fork);
+			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
+			pthread_mutex_lock(philo->right_fork);
 			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
 		}
 		else
 		{
-			pthread_mutex_lock(philo->left_fork);
-			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
 			pthread_mutex_lock(philo->right_fork);
+			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
+			pthread_mutex_lock(philo->left_fork);
 			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
 		}
 		//LOS FILOSOFOS EMPIEZAN A COMER
 		pthread_mutex_lock(&philo->meal_mutex);
 		philo->time_of_last_meal = get_time_stamp();
-		printf("Time of last meal %ld\n", get_time_stamp() - start_time);
+		//printf("Time of last meal %ld\n", get_time_stamp() - start_time);
 		print_message(philo, get_time_stamp() - start_time, "is eating\n");	
 		pthread_mutex_unlock(&philo->meal_mutex);
 		usleep_precise(philo->time_to_eat, philo);
@@ -197,6 +197,11 @@ void create_monitor_thread(t_simulation *sim)
 
 int main(int argc, char **argv)
 {
+	if (argc != 5)
+	{
+		printf("Not the right number of arguments");;
+		return (1);
+	}
 	t_simulation	simulation;
 
 	simulation.number_of_philosophers = ft_atol(argv[1]);
