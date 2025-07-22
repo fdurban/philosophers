@@ -66,5 +66,10 @@ typedef struct personal_timeval
 } personal_timeval_t ;
 
 long	ft_atol(const char *str);
+int	has_anyone_died(philo_t *philo);
+long	get_time_stamp(void);
+void	initialize_philosophers(t_simulation	*simulation);
+int	initialize_forks(t_simulation *sim);
+void	initialize_mutexes(shared_data_t *shared);
 
 #endif
