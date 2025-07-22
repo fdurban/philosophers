@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fernando <fernando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/07/22 17:29:01 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/07/22 18:16:27 by fernando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,7 +87,7 @@ void	*thread_function(void *arg)
 	pthread_mutex_unlock(&philo->meal_mutex);
 	if (philo->id % 2 != 0)
 	{
-		usleep_precise(1, philo);
+		usleep_precise(philo->time_to_eat, philo);
 	}
 	//printf("Start time: %ld, current time: %ld\n", start_time, get_time_stamp());
 	while (!has_anyone_died(philo))
@@ -96,16 +96,17 @@ void	*thread_function(void *arg)
 		if (philo->id % 2 == 0)
 		{
 			pthread_mutex_lock(philo->left_fork);
-			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
+			print_message(philo, get_time_stamp() - start_time, "has taken a left fork\n");
 			pthread_mutex_lock(philo->right_fork);
-			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
+			print_message(philo, get_time_stamp() - start_time, "has taken a right fork\n");
 		}
 		else
 		{
 			pthread_mutex_lock(philo->right_fork);
-			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
+			print_message(philo, get_time_stamp() - start_time, "has taken a right fork\n");
 			pthread_mutex_lock(philo->left_fork);
-			print_message(philo, get_time_stamp() - start_time, "has taken a fork\n");
+			print_message(philo, get_time_stamp() - start_time, "has taken a left fork\n");
+			usleep(100);
 		}
 		//LOS FILOSOFOS EMPIEZAN A COMER
 		pthread_mutex_lock(&philo->meal_mutex);
