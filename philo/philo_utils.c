@@ -6,12 +6,19 @@
 /*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 16:11:07 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/07/22 16:47:27 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/07/23 16:41:33 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
+void	print_message(t_philo *philo, long time, char *msg)
+{
+	pthread_mutex_lock(&philo->shared_data->write);
+	if (!has_anyone_died(philo))
+		printf("%ld %d %s", time, philo->id, msg);
+	pthread_mutex_unlock(&philo->shared_data->write);
+}
 
 long	get_time_stamp(void)
 {
@@ -21,7 +28,7 @@ long	get_time_stamp(void)
 	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
 }
 
-int	has_anyone_died(philo_t *philo)
+int	has_anyone_died(t_philo *philo)
 {
 	int	dead;
 
@@ -53,4 +60,23 @@ long	ft_atol(const char *str)
 		str++;
 	}
 	return (result * sign);
+}
+
+void	clean_up(t_simulation	*simulation)
+{
+	int	i;
+
+	i = 0;
+	while (i < simulation->number_of_philosophers)
+	{
+		pthread_mutex_destroy(&simulation->forks[i]);
+		pthread_mutex_destroy(&simulation->philosophers[i].meal_mutex);
+		i++;
+	}
+	pthread_mutex_destroy(&simulation->shared.check_dead);
+	pthread_mutex_destroy(&simulation->shared.write);
+	pthread_mutex_destroy(&simulation->shared.start_mutex);
+	free(simulation->philosophers);
+	free(simulation->threads);
+	free(simulation->forks);
 }
