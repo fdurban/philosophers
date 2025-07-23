@@ -6,7 +6,7 @@
 /*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/22 16:48:37 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/07/23 16:50:00 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/07/23 18:37:01 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,10 +79,20 @@ void	*thread_function(void *arg)
 	philo->time_of_last_meal = get_time_stamp();
 	pthread_mutex_unlock(&philo->meal_mutex);
 	start_time = philo->shared_data->start_time;
-	if (philo->id % 2 != 0)
+	if (philo->id % 2 != 0 && philo->shared_data->number_of_philosophers == 1)
 		usleep_precise(philo->time_to_eat, philo);
 	while (!has_anyone_died(philo))
 	{
+			printf("Num philo %d\n", philo->shared_data->number_of_philosophers);
+		if (philo->shared_data->number_of_philosophers == 1)
+		{
+				pthread_mutex_lock(philo->left_fork);
+				print_message(philo, get_time_stamp() - start_time,
+				"has taken a fork\n");
+				usleep(philo->time_to_die * 1000);
+				pthread_mutex_unlock(philo->left_fork);
+				return (NULL);
+		}
 		if (philo->shared_data->meals_required != -1
 			&& philo->meals_eaten >= philo->shared_data->meals_required)
 			break ;

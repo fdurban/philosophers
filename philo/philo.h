@@ -6,7 +6,7 @@
 /*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/23 14:49:41 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/07/23 17:08:05 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/07/23 19:02:48 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,7 +51,6 @@ typedef struct philo
 	long			time_to_eat;
 	long			time_to_sleep;
 	long			time_to_die;
-	long			time_to_think;
 	int				*someone_died;
 	long			number_of_times_must_eat;
 	long			meals_eaten;

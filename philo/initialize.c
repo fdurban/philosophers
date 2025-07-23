@@ -6,7 +6,7 @@
 /*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/22 16:45:58 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/07/23 17:11:10 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/07/23 19:02:25 by fdurban-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,14 +49,12 @@ void	initialize_philosophers(t_simulation	*simulation)
 		simulation->philosophers[i].time_to_eat = simulation->time_to_eat;
 		simulation->philosophers[i].time_to_sleep = simulation->time_to_sleep;
 		simulation->philosophers[i].number_of_times_must_eat = 0;
+		simulation->philosophers[i].shared_data->number_of_philosophers = simulation->number_of_philosophers;
+		printf("sahred data num of philo%d\n", simulation->philosophers[i].shared_data->number_of_philosophers);
 		if (simulation->argc == 6)
 			simulation->philosophers[i].number_of_times_must_eat
 				= simulation->number_of_times_must_eat;
 		simulation->philosophers[i].meals_eaten = 0;
-		simulation->philosophers[i].time_to_think
-			= simulation->philosophers[i].time_to_die
-			- (simulation->philosophers[i].time_to_sleep
-				+ simulation->philosophers[i].time_to_eat);
 		simulation->philosophers[i].left_fork = &simulation->forks[i];
 		simulation->philosophers[i].right_fork
 			= &simulation->forks[(i + 1) % simulation->number_of_philosophers];
