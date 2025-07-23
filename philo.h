@@ -17,9 +17,12 @@ typedef struct shared_data {
 	pthread_mutex_t	dead;
 	pthread_mutex_t	check_dead;
 	pthread_mutex_t	write;
+	pthread_mutex_t	start_mutex;
 	int				someone_died;
 	int				number_of_philosophers;
+	int				meals_required;
 	long			start_time;
+	int				start_flag;
 	long			check_interval;
 } shared_data_t;
 
@@ -50,6 +53,10 @@ typedef struct s_philo_monitor_args {
 typedef struct s_simulation {
 	int					argc;
 	char				**argv;
+	long				time_to_die;
+	long				time_to_eat;
+	long				time_to_sleep;
+	long				number_of_times_each_philosopher_must_eat;
 	long				number_of_philosophers;
 	philo_t				*philosophers;
 	pthread_t			*threads;

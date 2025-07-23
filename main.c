@@ -6,13 +6,11 @@
 /*   By: fernando <fernando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/07/22 18:16:27 by fernando         ###   ########.fr       */
+/*   Updated: 2025/07/23 03:23:29 by fernando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
-
-
 
 static void	print_message(philo_t *philo, long time, char *msg)
 {
@@ -23,21 +21,29 @@ static void	print_message(philo_t *philo, long time, char *msg)
 	
 }
 
-// FUNCION QUE HACE USO DE USLEEP PERO CON COMPROBACION DE MUERTE CADA VEZ
 void	usleep_precise(long time, philo_t *philo)
 {
 	long	start;
+	long	now;
 	long	elapsed;
+	long	remaining;
 
 	start = get_time_stamp();
-	while ((elapsed = get_time_stamp() - start) < time)
+	while (1)
 	{
-		if (has_anyone_died(philo))
+		now = get_time_stamp();
+		elapsed = now - start;
+		if (elapsed >= time || has_anyone_died(philo))
 			break ;
-		usleep(500); // más preciso que 1000us fijo
+		remaining = time - elapsed;
+		if (remaining > 1000)
+			usleep(500);
+		else if (remaining > 100)
+			usleep(100);
+		else
+			usleep(10);
 	}
 }
-
 
 void *monitor_function(void *arg)
 {
@@ -46,12 +52,20 @@ void *monitor_function(void *arg)
 	long num = args->number_of_philosophers;
 
 	int i;
+	int started = 0;
+	while (!started)
+	{
+		pthread_mutex_lock(&philosophers->shared_data->start_mutex);
+		started = philosophers->shared_data->start_flag;
+		pthread_mutex_unlock(&philosophers->shared_data->start_mutex);
+		if (!started)
+			usleep(50);
+	}
 	while (1)
 	{
 		i = 0;
 		while (i < num && philosophers[i].id != 0)
 		{
-			//printf("Current time: %ld, Philosopher %d last meal: %ld\n", get_time_stamp(), i, philosophers[i].time_of_last_meal);
 			pthread_mutex_lock(&philosophers[i].meal_mutex);
 			long current_time = get_time_stamp();
 			long time_since_last_meal = current_time - philosophers[i].time_of_last_meal;
@@ -70,7 +84,7 @@ void *monitor_function(void *arg)
 			pthread_mutex_unlock(&philosophers[i].meal_mutex);
 			i++;
 		}
-		usleep(500);
+		usleep(100);
 	}
 	return NULL;
 }
@@ -81,18 +95,29 @@ void	*thread_function(void *arg)
 	philo_t *philo = (philo_t *)arg;
 	long start_time;
 
-	start_time = philo->shared_data->start_time;
+	int started = 0;
+	while (!started)
+	{
+		pthread_mutex_lock(&philo->shared_data->start_mutex);
+		started = philo->shared_data->start_flag;
+		pthread_mutex_unlock(&philo->shared_data->start_mutex);
+		if (!started)
+			usleep(50);
+	}
+
 	pthread_mutex_lock(&philo->meal_mutex);
 	philo->time_of_last_meal = get_time_stamp();
 	pthread_mutex_unlock(&philo->meal_mutex);
-	if (philo->id % 2 != 0)
-	{
-		usleep_precise(philo->time_to_eat, philo);
-	}
-	//printf("Start time: %ld, current time: %ld\n", start_time, get_time_stamp());
+	start_time = philo->shared_data->start_time;
+		if (philo->id % 2 != 0)
+		{
+			usleep_precise((philo->time_to_eat/2), philo);
+		}
 	while (!has_anyone_died(philo))
 	{
-		//COGEN LOS TENEDORES
+		if (philo->shared_data->meals_required != -1 && 
+			philo->meals_eaten >= philo->shared_data->meals_required)
+		break;
 		if (philo->id % 2 == 0)
 		{
 			pthread_mutex_lock(philo->left_fork);
@@ -102,28 +127,22 @@ void	*thread_function(void *arg)
 		}
 		else
 		{
+			usleep(1000);
 			pthread_mutex_lock(philo->right_fork);
 			print_message(philo, get_time_stamp() - start_time, "has taken a right fork\n");
 			pthread_mutex_lock(philo->left_fork);
 			print_message(philo, get_time_stamp() - start_time, "has taken a left fork\n");
-			usleep(100);
 		}
-		//LOS FILOSOFOS EMPIEZAN A COMER
 		pthread_mutex_lock(&philo->meal_mutex);
 		philo->time_of_last_meal = get_time_stamp();
-		//printf("Time of last meal %ld\n", get_time_stamp() - start_time);
 		print_message(philo, get_time_stamp() - start_time, "is eating\n");	
 		pthread_mutex_unlock(&philo->meal_mutex);
 		usleep_precise(philo->time_to_eat, philo);
 		philo->meals_eaten++;
 		pthread_mutex_unlock(philo->left_fork);
 		pthread_mutex_unlock(philo->right_fork);
-		//LOS FILOSOFOS TERMINAN DE COMER
-		//LOS FILOSOFOS EMPIEZAN A DORMIR
 		print_message(philo, get_time_stamp() - start_time, "is sleeping\n");
 		usleep_precise(philo->time_to_sleep, philo);
-		//LOS FILOSOFOS TERMINAN DE DORMIR
-		//LOS FILOSOFOS EMPIEZAN A PENSAR EL RESTO DELE TIEMPO QUE LE QUEDA
 		print_message(philo, get_time_stamp() - start_time, "is thinking\n");
 	}
 	return (NULL);
@@ -163,7 +182,6 @@ int	end_threads(long number_of_philosophers, pthread_t *thread)
 	return (0);
 }
 
-
 void	clean_up(t_simulation	*simulation)
 {
 	int i;
@@ -175,9 +193,9 @@ void	clean_up(t_simulation	*simulation)
 		pthread_mutex_destroy(&simulation->philosophers[i].meal_mutex);
 		i++;
 	}
-	pthread_mutex_destroy(&simulation->shared.dead);
 	pthread_mutex_destroy(&simulation->shared.check_dead);
 	pthread_mutex_destroy(&simulation->shared.write);
+	pthread_mutex_destroy(&simulation->shared.start_mutex);
 	free(simulation->philosophers);
 	free(simulation->threads);
 	free(simulation->forks);
@@ -196,9 +214,32 @@ void create_monitor_thread(t_simulation *sim)
 	}
 }
 
+int	parse_args(int argc, char **argv, t_simulation *sim)
+{
+	sim->number_of_philosophers = ft_atol(argv[1]);
+	sim->time_to_die = ft_atol(argv[2]);
+	sim->time_to_eat = ft_atol(argv[3]);
+	sim->time_to_sleep = ft_atol(argv[4]);
+
+	if (argc == 6)
+		sim->number_of_times_each_philosopher_must_eat = ft_atol(argv[5]);
+	else
+		sim->number_of_times_each_philosopher_must_eat = -1;
+
+	if (sim->number_of_philosophers <= 0 || sim->time_to_die < 0 || 
+		sim->time_to_eat < 0 || sim->time_to_sleep < 0 || 
+		(argc == 6 && sim->number_of_times_each_philosopher_must_eat < 0))
+	{
+		printf("Error: argumentos inválidos\n");
+		return (0);
+	}
+	return (1);
+}
+
+
 int main(int argc, char **argv)
 {
-	if (argc != 5)
+	if (argc != 5 && argc != 6)
 	{
 		printf("Not the right number of arguments");;
 		return (1);
@@ -207,12 +248,14 @@ int main(int argc, char **argv)
 
 	simulation.number_of_philosophers = ft_atol(argv[1]);
 	simulation.shared.someone_died = 0;
-	simulation.shared.start_time = get_time_stamp();
 	simulation.philosophers = malloc(sizeof(philo_t) * simulation.number_of_philosophers);
 	simulation.threads = malloc(sizeof(pthread_t) * simulation.number_of_philosophers);
 	simulation.forks = malloc(sizeof(pthread_mutex_t) * simulation.number_of_philosophers);
 	simulation.argc = argc;
 	simulation.argv = argv;
+	simulation.shared.start_flag = 0;
+	parse_args(argc, argv, &simulation);
+	simulation.shared.meals_required = simulation.number_of_times_each_philosopher_must_eat;
 	if (!simulation.philosophers || !simulation.threads|| !simulation.forks)
 	{
 		perror("Error al reservar memoria");
@@ -223,6 +266,10 @@ int main(int argc, char **argv)
 	initialize_philosophers(&simulation);
 	create_threads(simulation.philosophers, simulation.threads, simulation.number_of_philosophers);
 	create_monitor_thread(&simulation);
+	pthread_mutex_lock(&simulation.shared.start_mutex);
+	simulation.shared.start_time = get_time_stamp();
+	simulation.shared.start_flag = 1;
+	pthread_mutex_unlock(&simulation.shared.start_mutex);
 	pthread_join(simulation.monitor, NULL);
 	end_threads(simulation.number_of_philosophers, simulation.threads);
 	clean_up(&simulation);
