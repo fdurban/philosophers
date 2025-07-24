@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   parse.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fernando <fernando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/23 16:18:00 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/07/23 17:37:27 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/07/24 02:27:56 by fernando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,17 +41,17 @@ int	is_str_numeric(char *str)
 
 int	parse_args(int argc, char **argv, t_simulation *sim)
 {
-	sim->number_of_philosophers = ft_atol(argv[1]);
-	sim->time_to_die = ft_atol(argv[2]);
-	sim->time_to_eat = ft_atol(argv[3]);
-	sim->time_to_sleep = ft_atol(argv[4]);
+	sim->shared.number_of_philosophers = ft_atol(argv[1]);
+	sim->shared.time_to_die = ft_atol(argv[2]);
+	sim->shared.time_to_eat = ft_atol(argv[3]);
+	sim->shared.time_to_sleep = ft_atol(argv[4]);
 	if (argc == 6)
-		sim->number_of_times_must_eat = ft_atol(argv[5]);
+		sim->shared.meals_required = ft_atol(argv[5]);
 	else
-		sim->number_of_times_must_eat = -1;
-	if (sim->number_of_philosophers <= 0 || sim->time_to_die < 0
-		|| sim->time_to_eat < 0 || sim->time_to_sleep < 0
-		|| (argc == 6 && sim->number_of_times_must_eat < 0)
+		sim->shared.meals_required = -1;
+	if (sim->shared.number_of_philosophers <= 0 || sim->shared.time_to_die < 0
+		|| sim->shared.time_to_eat < 0 || sim->shared.time_to_sleep < 0
+		|| (argc == 6 && sim->shared.meals_required < 0)
 		|| !is_str_numeric(argv[1]) || !is_str_numeric(argv[2])
 		|| !is_str_numeric(argv[3]) || !is_str_numeric(argv[4])
 		|| (argc == 6 && !is_str_numeric(argv[5])))

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   philo.h                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fernando <fernando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/23 14:49:41 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/07/23 19:02:48 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/07/24 02:54:08 by fernando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,10 +26,9 @@
 # define CYAN "\033[0;96m"
 # define RESET "\033[0m"
 
-typedef struct shared_data
+typedef struct s_shared_data
 {
 	pthread_mutex_t	dead;
-	pthread_mutex_t	check_dead;
 	pthread_mutex_t	write;
 	pthread_mutex_t	start_mutex;
 	int				someone_died;
@@ -37,23 +36,22 @@ typedef struct shared_data
 	int				meals_required;
 	long			start_time;
 	int				start_flag;
-	long			check_interval;
-}	t_shared_data;
-
-typedef struct philo
-{
-	pthread_mutex_t	*left_fork;
-	pthread_mutex_t	*right_fork;
-	t_shared_data	*shared_data;
-	pthread_mutex_t	meal_mutex;
-	int				id;
-	long			time_of_last_meal;
+	long			time_to_die;
 	long			time_to_eat;
 	long			time_to_sleep;
-	long			time_to_die;
-	int				*someone_died;
-	long			number_of_times_must_eat;
-	long			meals_eaten;
+}	t_shared_data;
+
+typedef struct s_philo
+{
+	int					id;
+	long				time_of_last_meal;
+	long				meals_eaten;
+
+	pthread_mutex_t		*left_fork;
+	pthread_mutex_t		*right_fork;
+	pthread_mutex_t		meal_mutex;
+
+	t_shared_data		*shared_data;
 }	t_philo;
 
 typedef struct s_philo_monitor_args
@@ -66,17 +64,11 @@ typedef struct s_simulation
 {
 	int					argc;
 	char				**argv;
-	long				time_to_die;
-	long				time_to_eat;
-	long				time_to_sleep;
-	long				number_of_times_must_eat;
-	long				number_of_philosophers;
+	t_shared_data		shared;
 	t_philo				*philosophers;
 	pthread_t			*threads;
 	pthread_t			monitor;
 	pthread_mutex_t		*forks;
-	t_shared_data		shared;
-	t_monitor_args		*monitor_args;
 }	t_simulation;
 
 int		parse_args(int argc, char **argv, t_simulation *sim);

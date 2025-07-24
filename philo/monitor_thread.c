@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   monitor_thread.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fernando <fernando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/23 16:25:41 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/07/23 16:26:08 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/07/24 02:44:45 by fernando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,10 +35,10 @@ static int	check_if_philo_died(t_philo *philo)
 	pthread_mutex_lock(&philo->meal_mutex);
 	current_time = get_time_stamp();
 	time_since_last_meal = current_time - philo->time_of_last_meal;
-	if (time_since_last_meal > philo->time_to_die)
+	if (time_since_last_meal > philo->shared_data->time_to_die)
 	{
 		pthread_mutex_unlock(&philo->meal_mutex);
-		pthread_mutex_lock(&philo->shared_data->check_dead);
+		pthread_mutex_lock(&philo->shared_data->dead);
 		if (!philo->shared_data->someone_died)
 		{
 			philo->shared_data->someone_died = 1;
@@ -46,7 +46,7 @@ static int	check_if_philo_died(t_philo *philo)
 				get_time_stamp() - philo->shared_data->start_time,
 				philo->id);
 		}
-		pthread_mutex_unlock(&philo->shared_data->check_dead);
+		pthread_mutex_unlock(&philo->shared_data->dead);
 		return (1);
 	}
 	pthread_mutex_unlock(&philo->meal_mutex);

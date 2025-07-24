@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   philo_thread.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fernando <fernando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/22 16:48:37 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/07/23 18:37:01 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/07/24 03:02:05 by fernando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,13 +57,13 @@ static void	eat_sleep_think(t_philo *philo, long start_time)
 	print_message(philo, get_time_stamp() - start_time,
 		"is eating\n");
 	pthread_mutex_unlock(&philo->meal_mutex);
-	usleep_precise(philo->time_to_eat, philo);
+	usleep_precise(philo->shared_data->time_to_eat, philo);
 	philo->meals_eaten++;
 	pthread_mutex_unlock(philo->left_fork);
 	pthread_mutex_unlock(philo->right_fork);
 	print_message(philo, get_time_stamp() - start_time,
 		"is sleeping\n");
-	usleep_precise(philo->time_to_sleep, philo);
+	usleep_precise(philo->shared_data->time_to_sleep, philo);
 	print_message(philo, get_time_stamp() - start_time,
 		"is thinking\n");
 }
@@ -79,19 +79,18 @@ void	*thread_function(void *arg)
 	philo->time_of_last_meal = get_time_stamp();
 	pthread_mutex_unlock(&philo->meal_mutex);
 	start_time = philo->shared_data->start_time;
-	if (philo->id % 2 != 0 && philo->shared_data->number_of_philosophers == 1)
-		usleep_precise(philo->time_to_eat, philo);
+	if (philo->id % 2 != 0 && philo->shared_data->number_of_philosophers != 1)
+		usleep_precise(philo->shared_data->time_to_eat, philo);
 	while (!has_anyone_died(philo))
 	{
-			printf("Num philo %d\n", philo->shared_data->number_of_philosophers);
 		if (philo->shared_data->number_of_philosophers == 1)
 		{
-				pthread_mutex_lock(philo->left_fork);
-				print_message(philo, get_time_stamp() - start_time,
+			pthread_mutex_lock(philo->left_fork);
+			print_message(philo, get_time_stamp() - start_time,
 				"has taken a fork\n");
-				usleep(philo->time_to_die * 1000);
-				pthread_mutex_unlock(philo->left_fork);
-				return (NULL);
+			usleep(philo->shared_data->time_to_die * 1000);
+			pthread_mutex_unlock(philo->left_fork);
+			return (NULL);
 		}
 		if (philo->shared_data->meals_required != -1
 			&& philo->meals_eaten >= philo->shared_data->meals_required)

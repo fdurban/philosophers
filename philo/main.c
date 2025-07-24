@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fernando <fernando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:35:19 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/07/23 17:37:46 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/07/24 02:55:12 by fernando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,7 +78,7 @@ void	create_monitor_thread(t_simulation *sim)
 
 	args = malloc(sizeof(t_monitor_args));
 	args->philosophers = sim->philosophers;
-	args->number_of_philosophers = sim->number_of_philosophers;
+	args->number_of_philosophers = sim->shared.number_of_philosophers;
 	if (pthread_create(&sim->monitor, NULL, monitor_function, args) != 0)
 	{
 		perror("Error creando el monitor");
@@ -97,7 +97,7 @@ int	main(int argc, char **argv)
 		return (1);
 	start_simulation(&simulation);
 	pthread_join(simulation.monitor, NULL);
-	end_threads(simulation.number_of_philosophers, simulation.threads);
+	end_threads(simulation.shared.number_of_philosophers, simulation.threads);
 	clean_up(&simulation);
 	return (0);
 }

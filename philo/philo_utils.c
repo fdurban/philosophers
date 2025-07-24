@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   philo_utils.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdurban- <fdurban-@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fernando <fernando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 16:11:07 by fdurban-          #+#    #+#             */
-/*   Updated: 2025/07/23 16:41:33 by fdurban-         ###   ########.fr       */
+/*   Updated: 2025/07/24 02:45:35 by fernando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,9 +32,9 @@ int	has_anyone_died(t_philo *philo)
 {
 	int	dead;
 
-	pthread_mutex_lock(&philo->shared_data->check_dead);
+	pthread_mutex_lock(&philo->shared_data->dead);
 	dead = philo->shared_data->someone_died;
-	pthread_mutex_unlock(&philo->shared_data->check_dead);
+	pthread_mutex_unlock(&philo->shared_data->dead);
 	return (dead);
 }
 
@@ -67,13 +67,13 @@ void	clean_up(t_simulation	*simulation)
 	int	i;
 
 	i = 0;
-	while (i < simulation->number_of_philosophers)
+	while (i < simulation->shared.number_of_philosophers)
 	{
 		pthread_mutex_destroy(&simulation->forks[i]);
 		pthread_mutex_destroy(&simulation->philosophers[i].meal_mutex);
 		i++;
 	}
-	pthread_mutex_destroy(&simulation->shared.check_dead);
+	pthread_mutex_destroy(&simulation->shared.dead);
 	pthread_mutex_destroy(&simulation->shared.write);
 	pthread_mutex_destroy(&simulation->shared.start_mutex);
 	free(simulation->philosophers);
